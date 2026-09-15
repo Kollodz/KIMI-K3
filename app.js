@@ -86,11 +86,18 @@
                 })
             });
 
-            const data = await response.json();
+            const responseText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                throw new Error('O servidor retornou uma resposta inválida (Timeout ou erro de gateway).');
+            }
+
             const loadingElem = document.getElementById(loadingId);
             if (loadingElem) loadingElem.remove();
 
-            if (data.error) throw new Error(data.error);
+            if (!response.ok || data.error) throw new Error(data.error || 'Erro desconhecido');
 
             appendMessage('assistant', data.reply);
             await saveMessageToSupabase(currentConversationId, 'assistant', data.reply);
@@ -100,7 +107,7 @@
             console.error('Erro:', error);
             const loadingElem = document.getElementById(loadingId);
             if (loadingElem) loadingElem.remove();
-            appendMessage('assistant', 'Desculpe, ocorreu um erro ao processar sua solicitação.');
+            appendMessage('assistant', 'Erro: ' + error.message);
         }
     }
 
@@ -119,7 +126,6 @@
         if (isUser) {
             innerBubble.textContent = content;
         } else {
-            // Proteção contra nulos ou indefinidos no marked
             const safeContent = content || '';
             if (typeof marked !== 'undefined') {
                 innerBubble.innerHTML = marked.parse(safeContent);

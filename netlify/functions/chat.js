@@ -1,47 +1,53 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export async function handler(event, context) {
+exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
     try {
         const { message } = JSON.parse(event.body);
-        const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+        const apiKey = process.env.NVIDIA_API_KEY;
 
-        if (!NVIDIA_API_KEY) {
-            return { statusCode: 500, body: JSON.stringify({ error: 'Chave da API da NVIDIA não configurada no Netlify.' }) };
+        if (!apiKey) {
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'NVIDIA_API_KEY não configurada no Netlify.' })
+            };
         }
 
-        const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
+        const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${NVIDIA_API_KEY}`,
-                "Accept": "application/json"
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
                 model: "moonshotai/kimi-k3",
                 messages: [
+                    { role: "system", content: "Você é um assistente prestativo." },
                     { role: "user", content: message }
                 ],
-                max_tokens: 16384,
-                temperature: 1,
-                reasoning_effort: "max",
+                temperature: 0.7,
+                max_tokens: 512,
                 stream: false
             })
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            return { statusCode: response.status, body: JSON.stringify({ error: data.error?.message || 'Erro na API da NVIDIA' }) };
+            const errorText = await response.text();
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({ error: `Erro na API NVIDIA: ${errorText}` })
+            };
         }
 
-        const reply = data.choices[0].message.content;
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content || 'Sem resposta.';
 
         return {
             statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ reply })
         };
 
@@ -49,7 +55,7 @@ export async function handler(event, context) {
         console.error('Erro na Netlify Function:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Erro interno no servidor.' })
+            body: JSON.stringify({ error: error.message })
         };
     }
 };
