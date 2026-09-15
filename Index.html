@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kimi Client - Claude Style</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Sidebar (Histórico de Conversas) -->
+    <aside class="w-64 bg-gray-950 border-r border-gray-800 flex flex-col justify-between p-4">
+        <div>
+            <button id="new-chat-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 px-4 rounded-xl transition mb-4 shadow-sm flex items-center justify-center gap-2">
+                <span>+</span> Nova Conversa
+            </button>
+            <div id="history-list" class="space-y-1 overflow-y-auto text-sm text-gray-400 max-h-[calc(100vh-140px)] pr-1">
+                <!-- Os chats salvos no Supabase entram aqui -->
+            </div>
+        </div>
+        <div class="text-xs text-gray-500 text-center pt-2 border-t border-gray-800/60">
+            Powered by Kimi-k3 & Supabase
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col justify-between relative bg-gray-900">
+        <!-- Caixa de Mensagens -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div id="welcome-screen" class="text-center text-gray-500 mt-32 max-w-lg mx-auto">
+                <h1 class="text-3xl font-semibold text-gray-200 mb-2">Como posso ajudar você hoje?</h1>
+                <p class="text-sm text-gray-400">Inicie uma conversa abaixo com o Kimi-k3.</p>
+            </div>
+        </div>
+
+        <!-- Input do Chat -->
+        <div class="p-4 bg-gray-900 border-t border-gray-800/80">
+            <div class="max-w-3xl mx-auto relative flex items-center">
+                <textarea id="user-input" rows="1" placeholder="Escreva sua mensagem para o Kimi..." class="w-full bg-gray-800 border border-gray-700/80 rounded-2xl pl-4 pr-14 py-3.5 focus:outline-none focus:border-amber-500 resize-none text-gray-100 placeholder-gray-500 text-sm shadow-inner max-h-36"></textarea>
+                <button id="send-btn" class="absolute right-3 bg-amber-600 hover:bg-amber-500 text-white p-2 rounded-xl transition flex items-center justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+            <p class="text-center text-[11px] text-gray-500 mt-2">O Kimi pode cometer erros. Considere verificar informações importantes.</p>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
