@@ -1,10 +1,6 @@
-// Usando um escopo isolado (IIFE) para evitar qualquer conflito de variáveis globais
 (function() {
-    // Configuração do Supabase
     const SUPABASE_URL = 'https://spsfpprikqmmmsbpmgxd.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwc2ZwcHJpa3FtbW1zYnBtZ3hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NzY4MTAsImV4cCI6MjEwNTA1MjgxMH0.mt7KxkcMdNG5aiO0EEDL3XAtGv532_F8pquwx3_STKU';
-    
-    // Inicializa o cliente usando um nome totalmente seguro
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentConversationId = null;
@@ -15,7 +11,6 @@
     const newChatBtn = document.getElementById('new-chat-btn');
     const historyList = document.getElementById('history-list');
 
-    // Ajustar altura do textarea automaticamente
     userInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
@@ -68,8 +63,11 @@
             await startNewChat();
         }
 
+        // Remove tela de boas-vindas com segurança se ela existir
         const welcome = document.getElementById('welcome-screen');
-        if (welcome) welcome.remove();
+        if (welcome) {
+            welcome.remove();
+        }
 
         userInput.value = '';
         userInput.style.height = 'auto';
@@ -90,7 +88,8 @@
             });
 
             const data = await response.json();
-            document.getElementById(loadingId).remove();
+            const loadingElem = document.getElementById(loadingId);
+            if (loadingElem) loadingElem.remove();
 
             if (data.error) throw new Error(data.error);
 
@@ -100,7 +99,8 @@
 
         } catch (error) {
             console.error('Erro:', error);
-            document.getElementById(loadingId).remove();
+            const loadingElem = document.getElementById(loadingId);
+            if (loadingElem) loadingElem.remove();
             appendMessage('assistant', 'Desculpe, ocorreu um erro ao processar sua solicitação.');
         }
     }
@@ -120,7 +120,12 @@
         if (isUser) {
             innerBubble.textContent = content;
         } else {
-            innerBubble.innerHTML = marked.parse(content);
+            // Usa marked com segurança se estiver disponível, senão exibe texto puro
+            if (typeof marked !== 'undefined') {
+                innerBubble.innerHTML = marked.parse(content);
+            } else {
+                innerBubble.textContent = content;
+            }
         }
 
         msgDiv.appendChild(innerBubble);
