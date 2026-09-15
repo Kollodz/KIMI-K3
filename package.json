@@ -1,0 +1,9 @@
+{
+  "name": "kimi-k3-chat",
+  "version": "1.0.0",
+  "description": "Chat Claude style with Kimi-k3 and Supabase",
+  "main": "index.js",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
