@@ -63,7 +63,6 @@
             await startNewChat();
         }
 
-        // Remove tela de boas-vindas com segurança se ela existir
         const welcome = document.getElementById('welcome-screen');
         if (welcome) {
             welcome.remove();
@@ -120,11 +119,12 @@
         if (isUser) {
             innerBubble.textContent = content;
         } else {
-            // Usa marked com segurança se estiver disponível, senão exibe texto puro
+            // Proteção contra nulos ou indefinidos no marked
+            const safeContent = content || '';
             if (typeof marked !== 'undefined') {
-                innerBubble.innerHTML = marked.parse(content);
+                innerBubble.innerHTML = marked.parse(safeContent);
             } else {
-                innerBubble.textContent = content;
+                innerBubble.textContent = safeContent;
             }
         }
 
