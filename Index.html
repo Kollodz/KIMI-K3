@@ -1,55 +1,98 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kimi Client - Claude Style</title>
+    <title>Kimi-K3 Multi-Agente Chat</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Marked.js para formatar Markdown -->
+    <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 flex h-screen overflow-hidden">
+<body class="bg-gray-950 text-gray-100 flex h-screen overflow-hidden">
 
-    <!-- Sidebar (Histórico) -->
-    <aside class="w-64 bg-gray-950 border-r border-gray-800 flex flex-col justify-between p-4">
-        <div>
-            <button id="new-chat-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 px-4 rounded-xl transition mb-4 shadow-sm flex items-center justify-center gap-2">
-                <span>+</span> Nova Conversa
+    <!-- Sidebar de Histórico -->
+    <aside class="w-64 bg-gray-950 border-r border-gray-800 flex flex-col justify-between hidden md:flex">
+        <div class="p-4 flex flex-col h-full">
+            <!-- Botão Nova Conversa -->
+            <button id="new-chat-btn" class="w-full bg-gray-900 hover:bg-gray-800 text-gray-200 border border-gray-700/60 font-medium py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nova Conversa
             </button>
-            <div id="history-list" class="space-y-1 overflow-y-auto text-sm text-gray-400 max-h-[calc(100vh-140px)] pr-1">
-                <!-- Histórico salvo no Supabase -->
+
+            <!-- Lista de Conversas Salvas -->
+            <div id="history-list" class="mt-4 flex-1 overflow-y-auto space-y-1 pr-1">
+                <!-- Preenchido via JavaScript -->
             </div>
         </div>
-        <div class="text-xs text-gray-500 text-center pt-2 border-t border-gray-800/60">
-            Powered by Kimi-k3 & Supabase
+        <div class="p-4 border-t border-gray-900 text-xs text-gray-500 text-center">
+            Kimi-K3 Multi-Agent System
         </div>
     </aside>
 
-    <!-- Main Chat Area -->
-    <main class="flex-1 flex flex-col justify-between relative bg-gray-900">
-        <!-- Caixa de Mensagens -->
-        <div id="chat-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+    <!-- Área Principal do Chat -->
+    <main class="flex-1 flex flex-col h-full relative bg-gray-950">
+        
+        <!-- Header Superior -->
+        <header class="h-14 border-b border-gray-800/60 flex items-center px-6 justify-between bg-gray-950/80 backdrop-blur z-10">
+            <span class="text-sm font-medium text-gray-300">Kimi-K3 & NVIDIA NIM Multi-Agent</span>
+            <div class="text-xs text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 font-medium">
+                Ativo (Gemma, DeepSeek, Llama Vision, GPT)
+            </div>
+        </header>
+
+        <!-- Container de Mensagens -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 pb-36">
+            <!-- Tela de Boas-Vindas Inicial -->
             <div id="welcome-screen" class="text-center text-gray-500 mt-32 max-w-lg mx-auto">
                 <h1 class="text-3xl font-semibold text-gray-200 mb-2">Como posso ajudar você hoje?</h1>
-                <p class="text-sm text-gray-400">Inicie uma conversa abaixo com o Kimi-k3.</p>
+                <p class="text-sm text-gray-400">Envie mensagens ou anexe códigos (.py, .js, .html) e imagens para o sistema inteligente.</p>
             </div>
         </div>
 
-        <!-- Input do Chat -->
-        <div class="p-4 bg-gray-900 border-t border-gray-800/80">
-            <div class="max-w-3xl mx-auto relative flex items-center">
-                <textarea id="user-input" rows="1" placeholder="Escreva sua mensagem para o Kimi..." class="w-full bg-gray-800 border border-gray-700/80 rounded-2xl pl-4 pr-14 py-3.5 focus:outline-none focus:border-amber-500 resize-none text-gray-100 placeholder-gray-500 text-sm shadow-inner max-h-36"></textarea>
-                <button id="send-btn" class="absolute right-3 bg-amber-600 hover:bg-amber-500 text-white p-2 rounded-xl transition flex items-center justify-center shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+        <!-- Barra Inferior Fixa (Input e Envio) -->
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-950 via-gray-950/90 to-transparent pt-6 pb-4 px-4 md:px-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Indicador visual de arquivo anexado -->
+                <div id="file-indicator" class="hidden mb-2 text-xs text-amber-400 bg-gray-900/90 border border-gray-800 px-3 py-1.5 rounded-lg flex items-center justify-between shadow-sm">
+                    <span>📎 Anexo: <strong id="file-name" class="text-gray-200"></strong></span>
+                    <button id="remove-file" class="text-red-400 hover:text-red-300 font-medium cursor-pointer">Remover</button>
+                </div>
+
+                <!-- Caixa de Input Principal -->
+                <div class="relative flex items-center w-full bg-gray-900 rounded-2xl border border-gray-800 p-2 shadow-xl">
+                    <!-- Botão de Anexo (Clipe) -->
+                    <button id="attach-btn" type="button" class="p-2 text-gray-400 hover:text-gray-200 transition cursor-pointer" title="Anexar código ou imagem">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                        </svg>
+                    </button>
+                    <!-- Input de arquivo escondido -->
+                    <input type="file" id="file-input" accept=".py,.js,.html,.txt,image/*" class="hidden">
+
+                    <!-- Textarea de Mensagem -->
+                    <textarea id="user-input" rows="1" placeholder="Envie sua mensagem ou anexe arquivos..." class="w-full bg-transparent text-gray-200 px-3 py-2 focus:outline-none resize-none max-h-32 text-sm"></textarea>
+
+                    <!-- Botão de Enviar -->
+                    <button id="send-btn" class="bg-amber-600 text-white p-2 rounded-xl hover:bg-amber-500 transition cursor-pointer shadow-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="text-center text-[10px] text-gray-500 mt-2">
+                    O sistema selecionará automaticamente a melhor IA (Gemma, DeepSeek, Llama Vision ou GPT) para a sua solicitação.
+                </div>
             </div>
-            <p class="text-center text-[11px] text-gray-500 mt-2">O Kimi pode cometer erros. Considere verificar informações importantes.</p>
         </div>
+
     </main>
 
+    <!-- Script Principal da Aplicação -->
     <script src="app.js"></script>
 </body>
 </html>

@@ -4,12 +4,18 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentConversationId = null;
+    let attachedFile = { name: null, type: null, data: null };
 
     const chatContainer = document.getElementById('chat-container');
     const userInput = document.getElementById('user-input');
     const sendBtn = document.getElementById('send-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
     const historyList = document.getElementById('history-list');
+    const attachBtn = document.getElementById('attach-btn');
+    const fileInput = document.getElementById('file-input');
+    const fileIndicator = document.getElementById('file-indicator');
+    const fileNameDisplay = document.getElementById('file-name');
+    const removeFileBtn = document.getElementById('remove-file');
 
     userInput.addEventListener('input', function() {
         this.style.height = 'auto';
@@ -17,6 +23,48 @@
     });
 
     newChatBtn.addEventListener('click', startNewChat);
+
+    // Manipulação de Anexos
+    attachBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        if (file.type.startsWith('image/')) {
+            reader.onload = function(uploadEvent) {
+                attachedFile = {
+                    name: file.name,
+                    type: file.type,
+                    data: uploadEvent.target.result // Base64 para imagens
+                };
+                showFileIndicator(file.name);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            reader.onload = function(uploadEvent) {
+                attachedFile = {
+                    name: file.name,
+                    type: 'code',
+                    data: uploadEvent.target.result // Conteúdo de texto para código (.py, .js, .html)
+                };
+                showFileIndicator(file.name);
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    function showFileIndicator(name) {
+        fileNameDisplay.textContent = name;
+        fileIndicator.classList.remove('hidden');
+    }
+
+    removeFileBtn.addEventListener('click', () => {
+        attachedFile = { name: null, type: null, data: null };
+        fileInput.value = '';
+        fileIndicator.classList.add('hidden');
+    });
 
     async function startNewChat() {
         try {
@@ -42,7 +90,7 @@
         chatContainer.innerHTML = `
             <div id="welcome-screen" class="text-center text-gray-500 mt-32 max-w-lg mx-auto">
                 <h1 class="text-3xl font-semibold text-gray-200 mb-2">Como posso ajudar você hoje?</h1>
-                <p class="text-sm text-gray-400">Inicie uma conversa abaixo com o Kimi-k3.</p>
+                <p class="text-sm text-gray-400">Envie mensagens ou anexe códigos e imagens para o multi-agente.</p>
             </div>
         `;
     }
@@ -56,23 +104,42 @@
     });
 
     async function handleSendMessage() {
-        const text = userInput.value.trim();
-        if (!text) return;
+        let text = userInput.value.trim();
+        if (!text && !attachedFile.data) return;
 
         if (!currentConversationId) {
             await startNewChat();
         }
 
         const welcome = document.getElementById('welcome-screen');
-        if (welcome) {
-            welcome.remove();
+        if (welcome) welcome.remove();
+
+        // Se houver arquivo de código anexado, injeta o conteúdo no texto da mensagem de forma limpa
+        let payloadMessage = text;
+        if (attachedFile.type === 'code') {
+            payloadMessage = `${text}\n\n[Arquivo Anexado: ${attachedFile.name}]\n\`\`\`\n${attachedFile.data}\n\`\`\``;
         }
 
         userInput.value = '';
         userInput.style.height = 'auto';
 
-        appendMessage('user', text);
-        await saveMessageToSupabase(currentConversationId, 'user', text);
+        // Mostra a mensagem no chat com indicação do arquivo se houver
+        appendMessage('user', text + (attachedFile.name ? ` 📎 [${attachedFile.name}]` : ''));
+        await saveMessageToSupabase(currentConversationId, 'user', text + (attachedFile.name ? ` 📎 [${attachedFile.name}]` : ''));
+
+        // Prepara dados do anexo para enviar à Netlify Function
+        const requestBody = {
+            conversation_id: currentConversationId,
+            message: payloadMessage,
+            fileType: attachedFile.type,
+            fileData: attachedFile.data
+        };
+
+        // Limpa o anexo visual após o envio
+        const activeFile = { ...attachedFile };
+        attachedFile = { name: null, type: null, data: null };
+        fileInput.value = '';
+        fileIndicator.classList.add('hidden');
 
         const loadingId = appendLoadingMessage();
 
@@ -80,10 +147,7 @@
             const response = await fetch('/.netlify/functions/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    conversation_id: currentConversationId,
-                    message: text
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const responseText = await response.text();
@@ -101,7 +165,7 @@
 
             appendMessage('assistant', data.reply);
             await saveMessageToSupabase(currentConversationId, 'assistant', data.reply);
-            updateConversationTitleIfNeeded(text);
+            updateConversationTitleIfNeeded(text || activeFile.name);
 
         } catch (error) {
             console.error('Erro:', error);
